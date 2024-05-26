@@ -1,0 +1,69 @@
+"A datetime string with format `Y-m-d H:i:s`, e.g. `2018-05-23 13:43:32`."
+scalar DateTime @scalar(class: "Nuwave\\Lighthouse\\Schema\\Types\\Scalars\\DateTime")
+
+
+type Actor {
+  id: ID!,
+  last_name: String!,
+  first_name: String!,
+  birthdate: String!,
+  films : [Film!] @belongsToMany
+}
+
+type Language {
+  id: ID!,
+  name: String!
+}
+
+type Role {
+  id: ID!,
+  name: String!
+}
+
+type User {
+  id: ID!,
+  login: String!,
+  last_name: String!,
+  first_name: String!,
+  role : Role! @belongsTo,
+  critics : [Critic] @hasMany
+}
+
+type Film {
+  id: ID!,
+  title: String!, 
+  release_year: Int!,
+  length: Int!,
+  description: String!,
+  rating: String!,
+  language : Language! @belongsTo,
+  special_features: String!,
+  image: String!,
+  critics : [Critic] @hasMany,
+  actors : [Actor!] @belongsToMany
+}
+
+type Critic {
+  id: ID!,
+  user : User! @belongsTo, 
+  film : Film! @belongsTo,
+  score: Int!,
+  comment: String!
+}
+
+type FilmPagination {
+  data: [Film!]!
+  paginatorInfo: PaginatorInfo!
+}
+
+type PaginatorInfo {
+  currentPage: Int!
+  lastPage: Int!
+}
+
+type Query{
+  film(id: ID! @eq) : Film @find
+  searchFilms(keyword: String, minReleaseYear: Int , minLength: Int, maxLength: Int, page: Int): FilmPagination! 
+}
+
+
