@@ -1,6 +1,7 @@
 "A datetime string with format `Y-m-d H:i:s`, e.g. `2018-05-23 13:43:32`."
 scalar DateTime @scalar(class: "Nuwave\\Lighthouse\\Schema\\Types\\Scalars\\DateTime")
 
+#PARTIE 1 SUR SUR L'ACCÈS PUBLICS
 
 type Actor {
   id: ID!,
@@ -23,9 +24,10 @@ type Role {
 type User {
   id: ID!,
   login: String!,
+  email:String!,
   last_name: String!,
   first_name: String!,
-  role : Role! @belongsTo,
+  role : Role @belongsTo,
   critics : [Critic] @hasMany
 }
 
@@ -56,14 +58,113 @@ type FilmPagination {
   paginatorInfo: PaginatorInfo!
 }
 
+#inspiration chat GPT
 type PaginatorInfo {
   currentPage: Int!
   lastPage: Int!
 }
 
 type Query{
+  me: User @auth
   film(id: ID! @eq) : Film @find
   searchFilms(keyword: String, minReleaseYear: Int , minLength: Int, maxLength: Int, page: Int): FilmPagination! 
+  login(login: String!, password: String!): AuthPayload!
+  actor(id: ID @eq): Actor @find
+}
+
+#PARTIE 2 SUR L'AUTHENTIFICATION
+
+input CreateUserInput {
+  login: String!,
+  last_name: String!,
+  first_name: String!,
+  password: String!,
+  email: String!,
+  role: CreateRoleBelongsTo!
+}
+
+input CreateCriticInput {
+  user: CreateUserBelongsTo!,
+  film: CreateFilmBelongsTo,!
+  score: Int!,
+  comment: String!
+}
+
+input CreateFilmInput {
+  title: String!, 
+  release_year: Int!,
+  length: Int!,
+  description: String!,
+  rating: String!,
+  language: CreateLanguageBelongsTo!,
+  special_features: String!,
+  image: String!,
+  critics: [CreateCriticHasMany],
+  actors: [CreateActorBelongsToMany!]
+}
+
+input CreateActorInput {
+  last_name: String!,
+  first_name: String!,
+  birthdate: String!,
+  films: [CreateFilmBelongsToMany!]
+}
+
+### CreateRelationsInput ###
+
+input CreateActorBelongsToMany {
+  connect: ID
+  create: [CreateActorInput!]
+}
+input CreateCriticHasMany {
+  connect: ID
+  create: [CreateCriticInput]
+}
+
+input CreateLanguageBelongsTo {
+   connect: ID
+}
+
+input CreateFilmBelongsToMany {
+  connect: ID
+  create: [CreateFilmInput]
+}
+
+input CreateRoleBelongsTo{
+  connect: ID
+}
+
+input CreateFilmBelongsTo{
+  connect: ID
+}
+
+input CreateUserBelongsTo{
+  connect: ID
+}
+
+### Creation Of Object ###
+
+input CreateUser {
+  create: CreateUserInput
+}
+
+input CreateActor {
+  create: CreateActorInput
+}
+
+input CreateCritic {
+  create: CreateCriticInput
 }
 
 
+#inspiration chat GPT
+type AuthPayload {
+  token: String
+  user: User 
+}
+
+type Mutation { 
+  createCritic(input: CreateCriticInput! @spread): Critic @create @guard @inject(context: "user.id", name: "input.user_id")
+  createActor(input: CreateActorInput! @spread): Actor @canModel(ability: "create") @guard
+  register(input: CreateUserInput! @spread) : User! @create @guard
+}
